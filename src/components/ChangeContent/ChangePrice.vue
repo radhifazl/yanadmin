@@ -17,8 +17,9 @@
 <script>
 import ChangeContent from './ChangeContent.vue'
 import { firestore } from "@/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import Swal from 'sweetalert2'
+import { getDate } from '../Date';
 
 export default {
   components: { ChangeContent },
@@ -63,12 +64,18 @@ export default {
             const docRef = doc(firestore, 'prices', 'yanpage_prices', `${this.priceType}_price`, 'prices')
             await updateDoc(docRef, {
               price: this.rupiahCurrency(this.changePrice)
-            }).then(() => {
+            }).then(async () => {
               Swal.fire({
                 type: 'success',
                 title: 'Success!',
                 text: 'Price has been changed to ' + this.changePrice,
                 icon: 'success'
+              })
+              const historyRef = collection(firestore, 'history')
+              await addDoc(historyRef, {
+                action: 'Changed Price to :' + this.changePrice,
+                date: getDate(new Date()),
+                month: new Date().getMonth() + 1,
               })
             }).catch(err => {
               console.log(err.code)

@@ -28,6 +28,7 @@ import { storage, firestore } from "@/firebase";
 import { addDoc, collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref as sRef, uploadBytesResumable } from "firebase/storage";
 import ChangeModal from '../Modal/ChangeModal.vue';
+import { getDate } from "@/components/Date"
 
 export default {
   components: { ChangeModal },
@@ -104,7 +105,7 @@ export default {
                         const historyRef = collection(firestore, 'history')
                         await addDoc(historyRef, {
                             action: 'Updated Home Image with name: '+ name[0],
-                            date: new Date(),
+                            date: getDate(new Date()),
                             month: new Date().getMonth() + 1,
                         })
                     })

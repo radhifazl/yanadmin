@@ -10,13 +10,13 @@
         <span>Visit YAN Landing Page -></span> <a href="">YAN Landing Page</a>
       </div>
 
-      <div class="visit-wrapper mb-5">
+      <!-- <div class="visit-wrapper mb-5">
           <ChangeContent :contentTitle="'Website Visit'"/>
           <div class="filter-wrapper mb-3">
             <label for="filterVisit" class="mb-2" id="visitLabel">Filter Visit by Month</label>
             <select class="form-select form-select-sm " @change="filterByMonth" v-model="filterVisit" id="filterVisit">
-              <!-- Create options from month -->
-              <option selected disabled value="Filter By Month">Filter By Month</option>
+               Create options from month
+               <option selected disabled value="Filter By Month">Filter By Month</option>
               <option value="1">January</option>
               <option value="2">February</option>
               <option value="3">March</option>
@@ -35,10 +35,11 @@
           <div class="webvisit-wrapper mb-5">
             <h5>Today: {{ todaysVisitCount }} </h5>
             <h5>This Month: {{ monthlyVisitCount }}</h5>
-          </div>
-      </div>
 
-      
+            <button class="btn btn-danger" @click="exportPdf" id="btn-export">Export PDF</button>
+          </div>
+      </div> --> -->
+
       
       <History/>
     </div>
@@ -54,6 +55,8 @@ import ChangeContent from '@/components/ChangeContent/ChangeContent.vue'
 import { collection, getDocs, query, where } from '@firebase/firestore'
 import { firestore } from '@/firebase'
 import { getDate } from '@/components/Date'
+import { jsPDF } from "jspdf";
+import autoTable from 'jspdf-autotable';
 
 export default {
     name: 'HomeView',
@@ -79,6 +82,38 @@ export default {
       }
     },
     methods: {
+      changeMonth(monthNumber) {
+        const date = new Date();
+        date.setMonth(monthNumber - 1);
+
+        // 👇️ using visitor's default locale
+        return date.toLocaleString([], {
+          month: 'long',
+        });
+      },
+      exportPdf() {
+        var doc = new jsPDF();
+        var data =[]
+        var btn = document.getElementById('btn-export')
+        var month = btn.getAttribute('data-month', this.changeMonth(new Date().getMonth() + 1))
+
+
+        if (!month) {
+          month = new Date().getMonth() + 1
+        }
+        
+        var todaysVisit = btn.getAttribute('data-todaysVisit', this.todaysVisitCount)
+        var monthlyVisit = btn.getAttribute('data-monthlyVisit', this.monthlyVisitCount)
+        // push param to var data
+        data.push([this.changeMonth(month), todaysVisit, monthlyVisit])
+
+        autoTable(doc, {
+          head: [['Month', 'Today Visitor', 'All Visitor']],
+          body: data,
+        })
+        
+        doc.save('Visitor ' + this.changeMonth(month) + '.pdf');
+      },
       async getWebsiteVisit() {
         const colRef = collection(firestore, 'webvisit')
         const q = query(colRef, where('date', '==', getDate(new Date())))
@@ -106,10 +141,16 @@ export default {
         for(let i = 0; i < this.monthlyVisit.length; i++) {
           this.monthlyVisitCount += this.monthlyVisit[i]
         }
+
+        // set attributes data to btn=export
+        document.getElementById('btn-export').setAttribute('data-month', new Date().getMonth() + 1)
+        document.getElementById('btn-export').setAttribute('data-todaysVisit', this.todaysVisitCount)
+        document.getElementById('btn-export').setAttribute('data-monthlyVisit', this.monthlyVisitCount)
       },
       async filterByMonth() {
         const colRef = collection(firestore, 'webvisit')
         const q = query(colRef, where('month', '==', parseInt(this.filterVisit) ))
+        document.getElementById('btn-export').setAttribute('data-month', parseInt(this.filterVisit))
         await getDocs(q)
           .then(res => {
             if(res.empty) {
@@ -130,7 +171,10 @@ export default {
                 for(let i = 0; i < this.monthlyVisit.length; i++) {
                   this.monthlyVisitCount += this.monthlyVisit[i]
                 }
+
             }
+            document.getElementById('btn-export').setAttribute('data-todaysVisit', this.todaysVisitCount)
+            document.getElementById('btn-export').setAttribute('data-monthlyVisit', this.monthlyVisitCount)
           })
       }
     },

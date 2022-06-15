@@ -20,6 +20,8 @@
                 </div>
             </div>
         </div>
+
+        <button class="btn btn-danger" @click="exportHistory">Export PDF</button>
     </div>
   </div>
 </template>
@@ -29,6 +31,8 @@ import ChangeContent from '@/components/ChangeContent/ChangeContent.vue'
 import { collection, orderBy, query, onSnapshot, deleteDoc, doc } from '@firebase/firestore'
 import { firestore } from '@/firebase'
 import Swal from 'sweetalert2'
+import { jsPDF } from "jspdf";
+import autoTable from 'jspdf-autotable';
 export default {
   components: { ChangeContent },
   name: 'HistoryView',
@@ -38,6 +42,22 @@ export default {
       }
   },
   methods: {
+        exportHistory() {
+            var doc = new jsPDF();
+            
+            var data = []
+
+            for (var i = 0; i < this.histories.length; i++) {
+                data.push([this.histories[i].action, this.histories[i].date])
+            }
+
+            autoTable(doc, {
+                head: [['Activity', 'Date']],
+                body: data,
+            })
+
+            doc.save('History.pdf');
+        },
       async getHistory() {
           const colRef = collection(firestore, 'history')
           const q = query(colRef, orderBy('date', 'desc'))
